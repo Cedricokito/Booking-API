@@ -1,62 +1,91 @@
-# BED Final Project Starter
+# Booking API
 
-This repository contains starter code for the Bookings project.
+A robust REST API for managing property bookings, built with Node.js.
 
-## How to get started
+## Features
 
-You can clone the repo, install and run the app with the following commands:
+- User authentication with JWT
+- Role-based access control (USER/ADMIN)
+- Property management system
+- Booking system with date validation and overlap checking
+- Review and rating system
+- Input validation and error handling
+- TypeScript-style documentation
 
-```plaintext
+## Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+- MongoDB
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone <your-repository-url>
+cd booking-api
+```
+
+2. Install dependencies:
+```bash
 npm install
-npm run dev
 ```
 
-## Starting the App
-
-To start the app, follow these steps:
-
-1. Create a `.env` file in the root directory.
-2. Replace the values for `AUTH_SECRET_KEY` and `SENTRY_DSN` with your own values.
-
-```plaintext
-AUTH_SECRET_KEY=your_secret_key_here
-SENTRY_DSN=your_sentry_dsn_here
+3. Create a `.env` file in the root directory and add your environment variables:
+```
+PORT=3000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
 ```
 
-## Running tests
-
-Tests are created using Newman, a command-line tool that is able to automate execution of Postman-created tests. Therefore, this command will simulate more or less the same tests that we executed during the course (e.g. test if the "happy case" returns 200 or 201 status code, or it returns 404 Not found when we are requesting a non-existing ID).
-
-To run the tests, perform the following steps:
-
-1. Start the server. This can usually be done by running `npm run dev` in the folder you want to test.
-2. Go to `postman/environments` folder in the repo. It has a content like this:
-
-```json
-{
-  "id": "f1936dc5-a5da-47d7-8189-045437f96e9e",
-  "name": "Local",
-  "values": [
-    {
-      "key": "baseUrl",
-      "value": "http://0.0.0.0:3000",
-      "type": "default",
-      "enabled": true
-    }
-  ],
-  "_postman_variable_scope": "environment",
-  "_postman_exported_at": "2023-08-11T05:55:13.469Z",
-  "_postman_exported_using": "Postman/10.16.9"
-}
+4. Start the server:
+```bash
+npm start
 ```
 
-3. If your server is running on a different port or URL, change the value `http://0.0.0.0:3000` to your server's data (this is the default one though).
-4. Run the following command
+## API Endpoints
 
-```plaintext
-npm test
-```
+### Authentication
+- POST /api/auth/register - Register a new user
+- POST /api/auth/login - Login user
 
-After this, you will see the test results prompted to the terminal. If you have a look at the `package.json` file, you will see that it executes the collection stored in the `postman` folder of the repo root.
+### Properties
+- GET /api/properties - Get all properties
+- POST /api/properties - Create a new property (requires authentication)
+- GET /api/properties/:id - Get property by ID
+- PUT /api/properties/:id - Update property (requires authentication)
+- DELETE /api/properties/:id - Delete property (requires authentication)
 
-Important: When dealing with JSON data, please, make sure that you restart the server with `npm run dev` every time you execute tests! This is important because some tests will remove data via DELETE endpoints and that operation cannot be repeated with the same ID again and again.
+### Bookings
+- POST /api/bookings - Create a new booking
+- GET /api/bookings - Get user's bookings
+- PUT /api/bookings/:id - Update booking status
+- DELETE /api/bookings/:id - Cancel booking
+
+## Error Handling
+
+The API uses custom error classes for different types of errors:
+- ValidationError (400)
+- AuthenticationError (401)
+- AuthorizationError (403)
+- NotFoundError (404)
+- ConflictError (409)
+
+## Security
+
+- JWT-based authentication
+- Password hashing
+- Input validation
+- Resource ownership verification
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
