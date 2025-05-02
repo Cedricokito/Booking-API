@@ -4,26 +4,53 @@ A robust REST API for managing property bookings, built with Node.js, Express, a
 
 ## Features
 
-- User authentication and authorization
-- Property management (CRUD operations)
-- Booking system
-- Review system
-- Role-based access control
+- 🏠 Property management
+- 📅 Booking system
+- ⭐ Review system
+- 🔐 Authentication & Authorization
+- 📊 Rate limiting
+- 💾 Caching
+- 📚 API Documentation
+
+## Technical Stack
+
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT Authentication
+- Swagger/OpenAPI Documentation
+- Jest for Testing
+
+## Performance Features
+
+- Memory caching for frequently accessed routes
+- Rate limiting with MongoDB store
+- Database connection pooling
+- Proper error handling
+- Request validation
+
+## Security Features
+
+- JWT authentication
+- Rate limiting
+- Helmet security headers
+- CORS configuration
 - Input validation
-- Error handling
-- Test coverage
+- Error sanitization
 
-## Prerequisites
+## Getting Started
 
-- Node.js (v14 or higher)
-- MongoDB (v4.4 or higher)
+### Prerequisites
+
+- Node.js >= 14
+- MongoDB
 - npm or yarn
 
-## Installation
+### Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/yourusername/booking-api.git
 cd booking-api
 ```
 
@@ -32,17 +59,26 @@ cd booking-api
 npm install
 ```
 
-3. Create a `.env` file in the root directory with the following variables:
-```env
+3. Create environment files:
+```bash
+# .env
+NODE_ENV=development
 PORT=3000
 MONGODB_URI=mongodb://localhost:27017/booking-api
-JWT_SECRET=your-secret-key
-CORS_ORIGIN=http://localhost:3000
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRES_IN=1h
 RATE_LIMIT=100
-NODE_ENV=development
+CORS_ORIGIN=*
+
+# .env.test
+NODE_ENV=test
+PORT=3001
+MONGODB_TEST_URI=mongodb://localhost:27017/booking-api-test
+JWT_SECRET=test-jwt-secret
+JWT_EXPIRES_IN=1h
 ```
 
-## Running the Application
+### Running the Application
 
 Development mode:
 ```bash
@@ -54,89 +90,89 @@ Production mode:
 npm start
 ```
 
-Run tests:
+### Running Tests
+
 ```bash
+# Run all tests
 npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
 ```
 
 ## API Documentation
 
-### Authentication
+The API documentation is available at `/api-docs` when running the server. It provides:
+- Detailed endpoint descriptions
+- Request/response examples
+- Authentication information
+- Schema definitions
 
-- POST `/api/auth/register` - Register a new user
-- POST `/api/auth/login` - Login user
-- GET `/api/auth/profile` - Get user profile (authenticated)
-- PUT `/api/auth/profile` - Update user profile (authenticated)
+## Main Endpoints
 
 ### Properties
-
-- GET `/api/properties` - List all properties (public)
-- GET `/api/properties/:id` - Get property details (public)
-- POST `/api/properties` - Create new property (authenticated)
-- PUT `/api/properties/:id` - Update property (authenticated, owner only)
-- DELETE `/api/properties/:id` - Delete property (authenticated, owner only)
-- GET `/api/properties/:id/reviews` - Get property reviews (public)
-- POST `/api/properties/:id/reviews` - Add property review (authenticated)
+- `GET /api/properties` - Get all properties
+- `POST /api/properties` - Create a property
+- `GET /api/properties/:id` - Get property details
+- `PUT /api/properties/:id` - Update property
+- `DELETE /api/properties/:id` - Delete property
 
 ### Bookings
+- `POST /api/bookings` - Create a booking
+- `GET /api/bookings` - Get user's bookings
+- `PUT /api/bookings/:id` - Update booking status
+- `DELETE /api/bookings/:id` - Cancel booking
 
-- POST `/api/bookings` - Create new booking (authenticated)
-- GET `/api/bookings` - List user's bookings (authenticated)
-- GET `/api/bookings/:id` - Get booking details (authenticated)
-- PUT `/api/bookings/:id/status` - Update booking status (authenticated)
+### Reviews
+- `POST /api/reviews` - Create a review
+- `GET /api/properties/:id/reviews` - Get property reviews
+- `PUT /api/reviews/:id` - Update review
+- `DELETE /api/reviews/:id` - Delete review
+
+### Authentication
+- `POST /api/auth/register` - Register user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user
 
 ## Error Handling
 
-The API uses custom error classes for different types of errors:
-- ValidationError (400)
-- AuthenticationError (401)
-- AuthorizationError (403)
-- NotFoundError (404)
+The API uses a centralized error handling mechanism with proper error codes and messages:
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 409: Conflict
+- 429: Too Many Requests
+- 500: Internal Server Error
 
-## Testing
+## Caching Strategy
 
-The project uses Jest for testing. Tests are located in the `tests` directory.
+The API implements intelligent caching:
+- Property listings: 5 minutes
+- Property reviews: 1 minute
+- User-specific data: No cache
+- Cache invalidation on updates
 
-To run tests:
-```bash
-npm test
-```
+## Rate Limiting
 
-To run tests with coverage:
-```bash
-npm run test:coverage
-```
-
-## Project Structure
-
-```
-booking-api/
-├── src/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   ├── utils/
-│   ├── app.js
-│   └── server.js
-├── tests/
-│   ├── integration/
-│   └── utils/
-├── .env
-├── .gitignore
-├── package.json
-└── README.md
-```
+Different limits for different operations:
+- General API: 100 requests per 15 minutes
+- Authentication: 5 attempts per hour
+- Property operations: 50 per hour
+- Booking operations: 30 per hour
+- Reviews: 10 per day
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License - see the LICENSE file for details. 

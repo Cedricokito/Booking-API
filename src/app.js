@@ -4,6 +4,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+const errorHandler = require('./middleware/errorHandler');
+const { defaultLimiter } = require('./middleware/rateLimiter');
+const { cacheMiddleware, CACHE_DURATIONS } = require('./middleware/cache');
 
 const app = express();
 
@@ -20,12 +25,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.RATE_LIMIT || 100, // limit each IP
-  message: 'Too many requests from this IP, please try again after 15 minutes'
-});
-app.use('/api', limiter);
+app.use(defaultLimiter);
 
 // Set security HTTP headers
 app.use(helmet.contentSecurityPolicy({
@@ -37,10 +37,8 @@ app.use(helmet.contentSecurityPolicy({
   },
 }));
 
-// Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/properties', require('./routes/property.routes'));
-app.use('/api/bookings', require('./routes/booking.routes'));
+// API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -54,66 +52,25 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Cache commonly accessed routes
+app.use('/api/properties', cacheMiddleware(CACHE_DURATIONS.MEDIUM));
+app.use('/api/properties/:id/reviews', cacheMiddleware(CACHE_DURATIONS.SHORT));
+
+// Routes
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/properties', require('./routes/property.routes'));
+app.use('/api/bookings', require('./routes/booking.routes'));
+app.use('/api/reviews', require('./routes/review.routes'));
+
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    status: 'error',
-    message: `Route ${req.originalUrl} not found`
-  });
+app.use((req, res, next) => {
+  const error = new Error('Not Found');
+  error.status = 404;
+  next(error);
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-
-  // Handle mongoose validation errors
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      status: 'error',
-      message: 'Validation Error',
-      errors: Object.values(err.errors).map(e => e.message)
-    });
-  }
-
-  // Handle mongoose duplicate key errors
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyPattern)[0];
-    return res.status(409).json({
-      status: 'error',
-      message: `Duplicate ${field} error`,
-      field: field
-    });
-  }
-
-  // Handle JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      status: 'error',
-      message: 'Invalid token'
-    });
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      status: 'error',
-      message: 'Token expired'
-    });
-  }
-
-  // Handle custom errors
-  if (err.isOperational) {
-    return res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message
-    });
-  }
-
-  // Handle unknown errors
-  res.status(500).json({
-    status: 'error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
-  });
-});
+// Global error handler
+app.use(errorHandler);
 
 // Database connection
 if (process.env.NODE_ENV !== 'test') {
