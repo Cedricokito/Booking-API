@@ -68,4 +68,7 @@ coverage/
 
 # Temporary files
 tmp/
-temp/ 
+temp/
+
+# Exclude example environment
+!.env.example 

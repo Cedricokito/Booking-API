@@ -1,16 +1,64 @@
 # Property Booking API
 
-A robust REST API for managing property bookings, built with Node.js, Express, and MongoDB.
+A RESTful API for managing property bookings, built with Node.js, Express, and MongoDB.
 
 ## Features
 
-- 🏠 Property management
-- 📅 Booking system
-- ⭐ Review system
-- 🔐 Authentication & Authorization
-- 📊 Rate limiting
-- 💾 Caching
-- 📚 API Documentation
+- User authentication and authorization
+- Property listing management
+- Booking system
+- Review system
+- MongoDB Atlas integration
+- Prisma ORM
+
+## Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+- MongoDB Atlas account
+
+## Setup
+
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd booking-api
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up your environment variables:
+- Copy `.env.example` to `.env`
+- Update the MongoDB connection string in your `.env` file
+
+4. Generate Prisma client:
+```bash
+npx prisma generate
+```
+
+5. Start the development server:
+```bash
+npm run dev
+```
+
+6. Access Prisma Studio:
+```bash
+npx prisma studio
+```
+Then open http://localhost:5555 in your browser.
+
+## Database Schema
+
+The application uses the following models:
+- User
+- Property
+- Booking
+- Review
+
+For detailed schema information, check `prisma/schema.prisma`.
 
 ## Technical Stack
 
