@@ -1,226 +1,172 @@
 # Property Booking API
 
-A RESTful API for managing property bookings, built with Node.js, Express, and MongoDB.
+Een RESTful API voor het beheren van accommodatie boekingen, gebouwd met Node.js, Express, en MongoDB.
 
 ## Features
 
-- User authentication and authorization
-- Property listing management
-- Booking system
-- Review system
-- MongoDB Atlas integration
-- Prisma ORM
+* Gebruikers authenticatie en autorisatie
+* Accommodatie beheer
+* Boekingssysteem
+* Reviewsysteem
+* MongoDB Atlas integratie
+* Prisma ORM
 
-## Prerequisites
+## Technische Stack
 
-- Node.js (v14 or higher)
-- npm or yarn
-- MongoDB Atlas account
+* Node.js
+* Express.js
+* MongoDB met Prisma
+* JWT Authenticatie
+* Jest voor Testing
 
-## Setup
+## Installatie
 
-1. Clone the repository:
+1. Clone de repository:
 ```bash
-git clone <your-repo-url>
-cd booking-api
+git clone https://github.com/Cedricokito/Booking-API.git
+cd Booking-API
 ```
 
-2. Install dependencies:
+2. Installeer dependencies:
 ```bash
 npm install
 ```
 
-3. Set up your environment variables:
-- Copy `.env.example` to `.env`
-- Update the MongoDB connection string in your `.env` file
+3. Maak een `.env` bestand aan met de volgende inhoud:
+```
+DATABASE_URL="mongodb+srv://booking_admin:booking123@cluster0.ppp2iuk.mongodb.net/booking-api?retryWrites=true&w=majority&appName=Cluster0"
+JWT_SECRET="jouw_jwt_secret"
+```
 
-4. Generate Prisma client:
+4. Genereer de Prisma client:
 ```bash
 npx prisma generate
 ```
 
-5. Start the development server:
+5. Start de development server:
 ```bash
 npm run dev
 ```
 
-6. Access Prisma Studio:
-```bash
-npx prisma studio
-```
-Then open http://localhost:5555 in your browser.
+## API Endpoints
+
+### Authenticatie
+* `POST /api/auth/register` - Registreer een nieuwe gebruiker
+* `POST /api/auth/login` - Login een gebruiker
+
+### Properties
+* `GET /api/properties` - Haal alle properties op
+* `GET /api/properties/:id` - Haal een specifieke property op
+* `POST /api/properties` - Maak een nieuwe property aan
+* `PUT /api/properties/:id` - Update een property
+* `DELETE /api/properties/:id` - Verwijder een property
+
+### Bookings
+* `GET /api/bookings` - Haal alle boekingen op
+* `GET /api/bookings/:id` - Haal een specifieke boeking op
+* `POST /api/bookings` - Maak een nieuwe boeking aan
+* `PUT /api/bookings/:id` - Update een boeking
+* `DELETE /api/bookings/:id` - Verwijder een boeking
+
+### Reviews
+* `GET /api/reviews` - Haal alle reviews op
+* `POST /api/reviews` - Maak een nieuwe review aan
+* `PUT /api/reviews/:id` - Update een review
+* `DELETE /api/reviews/:id` - Verwijder een review
 
 ## Database Schema
 
-The application uses the following models:
-- User
-- Property
-- Booking
-- Review
-
-For detailed schema information, check `prisma/schema.prisma`.
-
-## Technical Stack
-
-- Node.js
-- Express.js
-- MongoDB with Mongoose
-- JWT Authentication
-- Swagger/OpenAPI Documentation
-- Jest for Testing
-
-## Performance Features
-
-- Memory caching for frequently accessed routes
-- Rate limiting with MongoDB store
-- Database connection pooling
-- Proper error handling
-- Request validation
-
-## Security Features
-
-- JWT authentication
-- Rate limiting
-- Helmet security headers
-- CORS configuration
-- Input validation
-- Error sanitization
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js >= 14
-- MongoDB
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/booking-api.git
-cd booking-api
+### User
+```prisma
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  email     String    @unique
+  name      String?
+  password  String
+  role      String    @default("USER")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+  reviews   Review[]
+  properties Property[]
+}
 ```
 
-2. Install dependencies:
-```bash
-npm install
+### Property
+```prisma
+model Property {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  price       Float
+  location    String
+  ownerId     String    @db.ObjectId
+  owner       User      @relation(fields: [ownerId], references: [id])
+  bookings    Booking[]
+  reviews     Review[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
 ```
 
-3. Create environment files:
-```bash
-# .env
-NODE_ENV=development
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/booking-api
-JWT_SECRET=your-jwt-secret
-JWT_EXPIRES_IN=1h
-RATE_LIMIT=100
-CORS_ORIGIN=*
-
-# .env.test
-NODE_ENV=test
-PORT=3001
-MONGODB_TEST_URI=mongodb://localhost:27017/booking-api-test
-JWT_SECRET=test-jwt-secret
-JWT_EXPIRES_IN=1h
+### Booking
+```prisma
+model Booking {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  startDate  DateTime
+  endDate    DateTime
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id])
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id])
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
 ```
 
-### Running the Application
+### Review
+```prisma
+model Review {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating     Int
+  comment    String
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id])
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+```
 
-Development mode:
+## Testing
+
+Run de tests met:
+```bash
+npm test
+```
+
+## Veiligheid
+
+* JWT authenticatie voor alle beschermde routes
+* Wachtwoord hashing met bcrypt
+* Rate limiting voor API endpoints
+* Input validatie
+* Error handling middleware
+
+## Ontwikkeling
+
+1. Start de development server:
 ```bash
 npm run dev
 ```
 
-Production mode:
+2. Open Prisma Studio om de database te bekijken:
 ```bash
-npm start
+npx prisma studio
 ```
 
-### Running Tests
+## Licentie
 
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
-```
-
-## API Documentation
-
-The API documentation is available at `/api-docs` when running the server. It provides:
-- Detailed endpoint descriptions
-- Request/response examples
-- Authentication information
-- Schema definitions
-
-## Main Endpoints
-
-### Properties
-- `GET /api/properties` - Get all properties
-- `POST /api/properties` - Create a property
-- `GET /api/properties/:id` - Get property details
-- `PUT /api/properties/:id` - Update property
-- `DELETE /api/properties/:id` - Delete property
-
-### Bookings
-- `POST /api/bookings` - Create a booking
-- `GET /api/bookings` - Get user's bookings
-- `PUT /api/bookings/:id` - Update booking status
-- `DELETE /api/bookings/:id` - Cancel booking
-
-### Reviews
-- `POST /api/reviews` - Create a review
-- `GET /api/properties/:id/reviews` - Get property reviews
-- `PUT /api/reviews/:id` - Update review
-- `DELETE /api/reviews/:id` - Delete review
-
-### Authentication
-- `POST /api/auth/register` - Register user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user
-
-## Error Handling
-
-The API uses a centralized error handling mechanism with proper error codes and messages:
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 409: Conflict
-- 429: Too Many Requests
-- 500: Internal Server Error
-
-## Caching Strategy
-
-The API implements intelligent caching:
-- Property listings: 5 minutes
-- Property reviews: 1 minute
-- User-specific data: No cache
-- Cache invalidation on updates
-
-## Rate Limiting
-
-Different limits for different operations:
-- General API: 100 requests per 15 minutes
-- Authentication: 5 attempts per hour
-- Property operations: 50 per hour
-- Booking operations: 30 per hour
-- Reviews: 10 per day
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+Dit project is gelicenseerd onder de MIT License. 
