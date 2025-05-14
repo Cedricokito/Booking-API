@@ -5,7 +5,7 @@ const { connectDatabase, clearDatabase, closeDatabase, createTestUserAndToken } 
 describe('Property Tests', () => {
   let authToken;
   const testProperty = {
-    name: 'Test Property',
+    title: 'Test Property',
     description: 'A beautiful test property',
     price: 100,
     location: 'Test Location',
@@ -37,9 +37,9 @@ describe('Property Tests', () => {
         .send(testProperty);
 
       expect(res.status).toBe(201);
-      expect(res.body).toHaveProperty('name', testProperty.name);
+      expect(res.body).toHaveProperty('title', testProperty.title);
       expect(res.body).toHaveProperty('price', testProperty.price);
-      expect(res.body).toHaveProperty('owner');
+      expect(res.body).toHaveProperty('userId');
     });
 
     it('should not create property without authentication', async () => {
@@ -87,7 +87,7 @@ describe('Property Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(testProperty);
 
-      propertyId = res.body._id;
+      propertyId = res.body.id;
     });
 
     it('should get property by id', async () => {
@@ -95,7 +95,7 @@ describe('Property Tests', () => {
         .get(`/api/properties/${propertyId}`);
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('name', testProperty.name);
+      expect(res.body).toHaveProperty('title', testProperty.title);
     });
 
     it('should return 404 for non-existent property', async () => {

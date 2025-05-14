@@ -12,13 +12,41 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        status: 'fail',
+        message: 'Please provide name, email and password' 
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        status: 'fail',
+        message: 'Please provide a valid email address' 
+      });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        status: 'fail',
+        message: 'Password must be at least 6 characters long' 
+      });
+    }
+
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ 
+        status: 'fail',
+        message: 'User already exists' 
+      });
     }
 
     // Hash password
@@ -42,6 +70,7 @@ router.post('/register', async (req, res) => {
     );
 
     res.status(201).json({
+      status: 'success',
       token,
       user: {
         id: user.id,
@@ -50,7 +79,11 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Something went wrong during registration' 
+    });
   }
 });
 
@@ -59,19 +92,33 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        status: 'fail',
+        message: 'Please provide email and password' 
+      });
+    }
+
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { email }
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        status: 'fail',
+        message: 'Invalid credentials' 
+      });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        status: 'fail',
+        message: 'Invalid credentials' 
+      });
     }
 
     // Create token
@@ -81,7 +128,8 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.json({
+    res.status(200).json({
+      status: 'success',
       token,
       user: {
         id: user.id,
@@ -90,7 +138,11 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Something went wrong during login' 
+    });
   }
 });
 
@@ -107,9 +159,16 @@ router.get('/me', protect, async (req, res) => {
       }
     });
 
-    res.json(user);
+    res.status(200).json({
+      status: 'success',
+      data: user
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get current user error:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Something went wrong while fetching user data' 
+    });
   }
 });
 

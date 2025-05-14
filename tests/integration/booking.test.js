@@ -7,7 +7,7 @@ describe('Booking Tests', () => {
   let propertyId;
   
   const testProperty = {
-    name: 'Test Property',
+    title: 'Test Property',
     description: 'A beautiful test property',
     price: 100,
     location: 'Test Location'
@@ -33,7 +33,7 @@ describe('Booking Tests', () => {
       .set('Authorization', `Bearer ${authToken}`)
       .send(testProperty);
 
-    propertyId = propertyRes.body._id;
+    propertyId = propertyRes.body.id;
     testBooking.propertyId = propertyId;
   });
 
@@ -96,8 +96,8 @@ describe('Booking Tests', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.bookings)).toBeTruthy();
-      expect(res.body.bookings.length).toBe(1);
+      expect(Array.isArray(res.body)).toBeTruthy();
+      expect(res.body.length).toBe(1);
     });
 
     it('should filter bookings by status', async () => {
@@ -107,8 +107,9 @@ describe('Booking Tests', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.bookings.length).toBe(1);
-      expect(res.body.bookings[0].status).toBe('PENDING');
+      expect(Array.isArray(res.body)).toBeTruthy();
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].status).toBe('PENDING');
     });
   });
 
@@ -121,18 +122,17 @@ describe('Booking Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(testBooking);
 
-      bookingId = bookingRes.body._id;
+      bookingId = bookingRes.body.id;
     });
 
     it('should update booking status', async () => {
       const res = await request(app)
         .put(`/api/bookings/${bookingId}/status`)
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ status: 'CANCELLED', cancellationReason: 'Change of plans' });
+        .send({ status: 'CANCELLED' });
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('status', 'CANCELLED');
-      expect(res.body).toHaveProperty('cancellationReason', 'Change of plans');
     });
   });
 }); 

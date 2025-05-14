@@ -70,7 +70,7 @@ describe('Auth Flow', () => {
       .set('Authorization', `Bearer ${authToken}`);
     
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('email', testUser.email);
+    expect(res.body.data).toHaveProperty('email', testUser.email);
   });
 });
 
@@ -124,7 +124,7 @@ describe('Booking Flow', () => {
   test('1. Create new booking', async () => {
     const booking = {
       propertyId: testPropertyId,
-      startDate: new Date().toISOString(),
+      startDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
 

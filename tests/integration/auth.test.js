@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const { connectDatabase, clearDatabase, closeDatabase } = require('../utils/testSetup');
+const bcrypt = require('bcryptjs');
 
 describe('Authentication Tests', () => {
   const testUser = {
@@ -51,9 +52,12 @@ describe('Authentication Tests', () => {
 
   describe('POST /api/auth/login', () => {
     beforeEach(async () => {
-      await request(app)
+      // Register user first
+      const res = await request(app)
         .post('/api/auth/register')
         .send(testUser);
+      
+      expect(res.status).toBe(201);
     });
 
     it('should login successfully with correct credentials', async () => {
