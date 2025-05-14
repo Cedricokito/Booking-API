@@ -1,20 +1,5 @@
 const rateLimit = require('express-rate-limit');
-const MongoStore = require('rate-limit-mongo');
 const { AppError } = require('./errorHandler');
-
-/**
- * Create MongoDB store for rate limiting
- * @param {String} collection - Collection name for rate limiting
- * @returns {Object} MongoDB store instance
- */
-const createMongoStore = (collection) => {
-  return new MongoStore({
-    uri: process.env.MONGODB_URI,
-    collectionName: collection,
-    expireTimeMs: 60 * 60 * 1000, // 1 hour
-    errorHandler: console.error
-  });
-};
 
 /**
  * Rate limit configurations for different routes
@@ -59,12 +44,10 @@ const RATE_LIMITS = {
 /**
  * Create rate limiter middleware
  * @param {Object} config - Rate limit configuration
- * @param {String} storeCollection - MongoDB collection name for rate limiting
  * @returns {Function} Rate limiter middleware
  */
-const createRateLimiter = (config, storeCollection) => {
+const createRateLimiter = (config) => {
   return rateLimit({
-    store: createMongoStore(storeCollection),
     windowMs: config.windowMs,
     max: config.max,
     message: {
@@ -81,11 +64,11 @@ const createRateLimiter = (config, storeCollection) => {
 };
 
 // Create middleware instances
-const defaultLimiter = createRateLimiter(RATE_LIMITS.DEFAULT, 'rateLimit_default');
-const authLimiter = createRateLimiter(RATE_LIMITS.AUTH, 'rateLimit_auth');
-const propertyLimiter = createRateLimiter(RATE_LIMITS.PROPERTY, 'rateLimit_property');
-const bookingLimiter = createRateLimiter(RATE_LIMITS.BOOKING, 'rateLimit_booking');
-const reviewLimiter = createRateLimiter(RATE_LIMITS.REVIEW, 'rateLimit_review');
+const defaultLimiter = createRateLimiter(RATE_LIMITS.DEFAULT);
+const authLimiter = createRateLimiter(RATE_LIMITS.AUTH);
+const propertyLimiter = createRateLimiter(RATE_LIMITS.PROPERTY);
+const bookingLimiter = createRateLimiter(RATE_LIMITS.BOOKING);
+const reviewLimiter = createRateLimiter(RATE_LIMITS.REVIEW);
 
 module.exports = {
   defaultLimiter,
