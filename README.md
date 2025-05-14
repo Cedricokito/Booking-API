@@ -1,172 +1,127 @@
-# Property Booking API
+# Booking API
 
-Een RESTful API voor het beheren van accommodatie boekingen, gebouwd met Node.js, Express, en MongoDB.
+A RESTful API for managing property bookings and reviews.
 
-## Features
+## Prerequisites
 
-* Gebruikers authenticatie en autorisatie
-* Accommodatie beheer
-* Boekingssysteem
-* Reviewsysteem
-* MongoDB Atlas integratie
-* Prisma ORM
+- Node.js (v14 or higher)
+- MongoDB (v4.4 or higher)
+- npm or yarn
 
-## Technische Stack
+## Setup Instructions
 
-* Node.js
-* Express.js
-* MongoDB met Prisma
-* JWT Authenticatie
-* Jest voor Testing
-
-## Installatie
-
-1. Clone de repository:
+1. Clone the repository:
 ```bash
-git clone https://github.com/Cedricokito/Booking-API.git
-cd Booking-API
+git clone <repository-url>
+cd booking-api
 ```
 
-2. Installeer dependencies:
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Maak een `.env` bestand aan met de volgende inhoud:
-```
-DATABASE_URL="mongodb+srv://booking_admin:booking123@cluster0.ppp2iuk.mongodb.net/booking-api?retryWrites=true&w=majority&appName=Cluster0"
-JWT_SECRET="jouw_jwt_secret"
-```
+3. Environment Setup:
+   - Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   - Update the `.env` file with your configuration:
+     - Set your MongoDB connection string
+     - Generate a secure JWT secret
+     - Configure email settings if needed
 
-4. Genereer de Prisma client:
+4. Database Setup:
+   - Make sure MongoDB is running
+   - The database will be created automatically on first run
+
+5. Run Database Migrations:
 ```bash
-npx prisma generate
+npx prisma migrate dev
 ```
 
-5. Start de development server:
+6. Seed the Database (Optional):
+```bash
+npm run seed
+```
+
+## Running the Application
+
+Development mode:
 ```bash
 npm run dev
 ```
 
-## API Endpoints
-
-### Authenticatie
-* `POST /api/auth/register` - Registreer een nieuwe gebruiker
-* `POST /api/auth/login` - Login een gebruiker
-
-### Properties
-* `GET /api/properties` - Haal alle properties op
-* `GET /api/properties/:id` - Haal een specifieke property op
-* `POST /api/properties` - Maak een nieuwe property aan
-* `PUT /api/properties/:id` - Update een property
-* `DELETE /api/properties/:id` - Verwijder een property
-
-### Bookings
-* `GET /api/bookings` - Haal alle boekingen op
-* `GET /api/bookings/:id` - Haal een specifieke boeking op
-* `POST /api/bookings` - Maak een nieuwe boeking aan
-* `PUT /api/bookings/:id` - Update een boeking
-* `DELETE /api/bookings/:id` - Verwijder een boeking
-
-### Reviews
-* `GET /api/reviews` - Haal alle reviews op
-* `POST /api/reviews` - Maak een nieuwe review aan
-* `PUT /api/reviews/:id` - Update een review
-* `DELETE /api/reviews/:id` - Verwijder een review
-
-## Database Schema
-
-### User
-```prisma
-model User {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  email     String    @unique
-  name      String?
-  password  String
-  role      String    @default("USER")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  bookings  Booking[]
-  reviews   Review[]
-  properties Property[]
-}
-```
-
-### Property
-```prisma
-model Property {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String
-  price       Float
-  location    String
-  ownerId     String    @db.ObjectId
-  owner       User      @relation(fields: [ownerId], references: [id])
-  bookings    Booking[]
-  reviews     Review[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-```
-
-### Booking
-```prisma
-model Booking {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  startDate  DateTime
-  endDate    DateTime
-  userId     String   @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id])
-  propertyId String   @db.ObjectId
-  property   Property @relation(fields: [propertyId], references: [id])
-  status     String   @default("PENDING")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-```
-
-### Review
-```prisma
-model Review {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  rating     Int
-  comment    String
-  userId     String   @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id])
-  propertyId String   @db.ObjectId
-  property   Property @relation(fields: [propertyId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
+Production mode:
+```bash
+npm start
 ```
 
 ## Testing
 
-Run de tests met:
+Run tests:
 ```bash
 npm test
 ```
 
-## Veiligheid
+## API Documentation
 
-* JWT authenticatie voor alle beschermde routes
-* Wachtwoord hashing met bcrypt
-* Rate limiting voor API endpoints
-* Input validatie
-* Error handling middleware
+Once the server is running, you can access the API documentation at:
+- Swagger UI: http://localhost:3000/api-docs
+- OpenAPI JSON: http://localhost:3000/api-docs.json
 
-## Ontwikkeling
+## Environment Variables
 
-1. Start de development server:
-```bash
-npm run dev
+The following environment variables are required:
+
+### Required Variables
+- `MONGODB_URI`: MongoDB connection string
+- `DATABASE_URL`: Prisma database URL
+- `PORT`: Server port number
+- `NODE_ENV`: Environment (development/production)
+- `JWT_SECRET`: Secret key for JWT tokens
+- `JWT_EXPIRES_IN`: JWT token expiration time
+
+### Optional Variables
+- `SMTP_HOST`: SMTP server host
+- `SMTP_PORT`: SMTP server port
+- `SMTP_USER`: SMTP user email
+- `SMTP_PASS`: SMTP password
+- `API_URL`: Base URL for the API
+- `API_VERSION`: API version
+- `RATE_LIMIT_WINDOW_MS`: Rate limiting window
+- `RATE_LIMIT_MAX_REQUESTS`: Maximum requests per window
+- `LOG_LEVEL`: Logging level
+
+## Project Structure
+
+```
+booking-api/
+├── src/
+│   ├── config/         # Configuration files
+│   ├── controllers/    # Route controllers
+│   ├── middleware/     # Custom middleware
+│   ├── models/         # Database models
+│   ├── routes/         # API routes
+│   ├── services/       # Business logic
+│   ├── utils/          # Utility functions
+│   ├── app.js          # Express app setup
+│   └── server.js       # Server entry point
+├── tests/              # Test files
+├── prisma/             # Prisma schema and migrations
+├── .env                # Environment variables
+├── .env.example        # Example environment variables
+└── package.json        # Project dependencies
 ```
 
-2. Open Prisma Studio om de database te bekijken:
-```bash
-npx prisma studio
-```
+## Contributing
 
-## Licentie
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-Dit project is gelicenseerd onder de MIT License. 
+## License
+
+This project is licensed under the MIT License. 
