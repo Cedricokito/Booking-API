@@ -1,44 +1,87 @@
-import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
-dotenv.config();
+const prisma = new PrismaClient();
 
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bookingdb';
-const client = new MongoClient(uri);
+async function main() {
+  // Verwijder bestaande data
+  await prisma.booking.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.property.deleteMany();
+  await prisma.user.deleteMany();
 
-async function seed() {
-  try {
-    await client.connect();
-    const db = client.db();
-    const properties = db.collection('properties');
+  // Maak test gebruikers
+  const hashedPassword = await bcrypt.hash('password123', 10);
+  
+  const user1 = await prisma.user.create({
+    data: {
+      email: 'john@example.com',
+      name: 'John Doe',
+      password: hashedPassword,
+      role: 'USER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
 
-    // Voorbeeld data
-    const sampleProperties = [
-      {
-        name: 'Beach House',
-        location: 'Zandvoort',
-        price: 120,
-        description: 'Mooi huis aan het strand',
-      },
-      {
-        name: 'City Apartment',
-        location: 'Amsterdam',
-        price: 90,
-        description: 'Centraal gelegen appartement',
-      },
-    ];
+  const user2 = await prisma.user.create({
+    data: {
+      email: 'jane@example.com',
+      name: 'Jane Smith',
+      password: hashedPassword,
+      role: 'USER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
 
-    // Eerst alles leegmaken (optioneel)
-    await properties.deleteMany({});
-    // Voeg de voorbeelddata toe
-    await properties.insertMany(sampleProperties);
+  // Maak test properties
+  const property1 = await prisma.property.create({
+    data: {
+      title: 'Luxe Villa in Amsterdam',
+      description: 'Prachtige villa met uitzicht op het IJ',
+      location: 'Amsterdam',
+      price: 250.00,
+      ownerId: user1.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
 
-    console.log('Database succesvol gevuld met voorbeelddata!');
-  } catch (err) {
-    console.error('Fout bij seeden:', err);
-  } finally {
-    await client.close();
-  }
+  const property2 = await prisma.property.create({
+    data: {
+      title: 'Cozy Apartment in Rotterdam',
+      description: 'Modern appartement in het centrum',
+      location: 'Rotterdam',
+      price: 150.00,
+      ownerId: user2.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  // Maak test bookings
+  await prisma.booking.create({
+    data: {
+      id: new Date().getTime().toString(),
+    },
+  });
+
+  // Maak test reviews
+  await prisma.review.create({
+    data: {
+      id: new Date().getTime().toString(),
+    },
+  });
+
+  console.log('Database is succesvol geseed!');
 }
 
-seed(); 
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  }); 

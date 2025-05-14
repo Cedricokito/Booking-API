@@ -1,127 +1,125 @@
 # Booking API
 
-A RESTful API for managing property bookings and reviews.
+Een RESTful API voor een boekingssysteem, gebouwd met Node.js, Express, Prisma en MongoDB.
 
-## Prerequisites
+## Vereisten
 
-- Node.js (v14 or higher)
-- MongoDB (v4.4 or higher)
-- npm or yarn
+- Node.js (v14 of hoger)
+- MongoDB (lokaal of MongoDB Atlas)
+- npm of yarn
 
-## Setup Instructions
+## Installatie
 
-1. Clone the repository:
+1. Clone de repository:
 ```bash
-git clone <repository-url>
-cd booking-api
+git clone https://github.com/Cedricokito/Booking-API.git
+cd Booking-API
 ```
 
-2. Install dependencies:
+2. Installeer dependencies:
 ```bash
 npm install
 ```
 
-3. Environment Setup:
-   - Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   - Update the `.env` file with your configuration:
-     - Set your MongoDB connection string
-     - Generate a secure JWT secret
-     - Configure email settings if needed
+3. Maak een `.env` bestand aan in de root van het project met de volgende inhoud:
+```env
+# Database
+DATABASE_URL="mongodb://localhost:27017/booking-api"
 
-4. Database Setup:
-   - Make sure MongoDB is running
-   - The database will be created automatically on first run
+# Server
+PORT=3000
+NODE_ENV=development
 
-5. Run Database Migrations:
-```bash
-npx prisma migrate dev
+# JWT
+JWT_SECRET="your-super-secret-jwt-key"
+JWT_EXPIRES_IN="7d"
+
+# Email (optioneel)
+SMTP_HOST="smtp.example.com"
+SMTP_PORT=587
+SMTP_USER="your-email@example.com"
+SMTP_PASS="your-email-password"
+
+# API Keys (optioneel)
+STRIPE_SECRET_KEY="your-stripe-secret-key"
+STRIPE_WEBHOOK_SECRET="your-stripe-webhook-secret"
 ```
 
-6. Seed the Database (Optional):
+## Database Setup
+
+1. Zorg ervoor dat MongoDB draait op je systeem of gebruik MongoDB Atlas
+
+2. Synchroniseer de database met Prisma:
+```bash
+npx prisma db push
+```
+
+3. Seed de database met testdata:
 ```bash
 npm run seed
 ```
 
-## Running the Application
+## Development Server Starten
 
-Development mode:
+Start de development server:
 ```bash
 npm run dev
 ```
 
-Production mode:
+De server draait nu op http://localhost:3000
+
+## Prisma Studio
+
+Om de database te bekijken en te beheren via een GUI:
 ```bash
-npm start
+npx prisma studio
 ```
+Prisma Studio is beschikbaar op http://localhost:5555
+
+## API Endpoints
+
+### Gebruikers
+- `POST /api/users/register` - Registreer een nieuwe gebruiker
+- `POST /api/users/login` - Login voor bestaande gebruikers
+- `GET /api/users/me` - Haal huidige gebruiker op
+- `PUT /api/users/me` - Update huidige gebruiker
+
+### Properties
+- `GET /api/properties` - Haal alle properties op
+- `POST /api/properties` - Maak een nieuwe property aan
+- `GET /api/properties/:id` - Haal een specifieke property op
+- `PUT /api/properties/:id` - Update een property
+- `DELETE /api/properties/:id` - Verwijder een property
+
+### Bookings
+- `GET /api/bookings` - Haal alle bookings op
+- `POST /api/bookings` - Maak een nieuwe booking aan
+- `GET /api/bookings/:id` - Haal een specifieke booking op
+- `PUT /api/bookings/:id` - Update een booking
+- `DELETE /api/bookings/:id` - Verwijder een booking
+
+### Reviews
+- `GET /api/reviews` - Haal alle reviews op
+- `POST /api/reviews` - Maak een nieuwe review aan
+- `GET /api/reviews/:id` - Haal een specifieke review op
+- `PUT /api/reviews/:id` - Update een review
+- `DELETE /api/reviews/:id` - Verwijder een review
 
 ## Testing
 
-Run tests:
+Run de tests:
 ```bash
 npm test
 ```
 
-## API Documentation
-
-Once the server is running, you can access the API documentation at:
-- Swagger UI: http://localhost:3000/api-docs
-- OpenAPI JSON: http://localhost:3000/api-docs.json
-
-## Environment Variables
-
-The following environment variables are required:
-
-### Required Variables
-- `MONGODB_URI`: MongoDB connection string
-- `DATABASE_URL`: Prisma database URL
-- `PORT`: Server port number
-- `NODE_ENV`: Environment (development/production)
-- `JWT_SECRET`: Secret key for JWT tokens
-- `JWT_EXPIRES_IN`: JWT token expiration time
-
-### Optional Variables
-- `SMTP_HOST`: SMTP server host
-- `SMTP_PORT`: SMTP server port
-- `SMTP_USER`: SMTP user email
-- `SMTP_PASS`: SMTP password
-- `API_URL`: Base URL for the API
-- `API_VERSION`: API version
-- `RATE_LIMIT_WINDOW_MS`: Rate limiting window
-- `RATE_LIMIT_MAX_REQUESTS`: Maximum requests per window
-- `LOG_LEVEL`: Logging level
-
-## Project Structure
-
-```
-booking-api/
-├── src/
-│   ├── config/         # Configuration files
-│   ├── controllers/    # Route controllers
-│   ├── middleware/     # Custom middleware
-│   ├── models/         # Database models
-│   ├── routes/         # API routes
-│   ├── services/       # Business logic
-│   ├── utils/          # Utility functions
-│   ├── app.js          # Express app setup
-│   └── server.js       # Server entry point
-├── tests/              # Test files
-├── prisma/             # Prisma schema and migrations
-├── .env                # Environment variables
-├── .env.example        # Example environment variables
-└── package.json        # Project dependencies
-```
-
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+1. Fork de repository
+2. Maak een nieuwe branch (`git checkout -b feature/amazing-feature`)
+3. Commit je wijzigingen (`git commit -m 'Add some amazing feature'`)
+4. Push naar de branch (`git push origin feature/amazing-feature`)
+5. Open een Pull Request
 
 ## License
 
-This project is licensed under the MIT License. 
+Dit project is gelicenseerd onder de MIT License. 
