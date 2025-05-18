@@ -1,107 +1,82 @@
 # Booking API
 
-Een RESTful API voor het boeken van vakantiehuizen en appartementen.
+Een RESTful API voor een property booking systeem, gebouwd met Node.js, Express, en MongoDB (via Prisma ORM).
 
-## Technologieën
+## Quick Start
 
-- Node.js
-- Express
-- Prisma (ORM)
-- MongoDB
-- JWT voor authenticatie
-
-## Installatie
-
-1. Clone de repository:
+### 1. Repository Clonen
 ```bash
-git clone [repository-url]
+git clone https://github.com/Cedricokito/Booking-API.git
 cd Booking-API
 ```
 
-2. Installeer dependencies:
+### 2. Dependencies Installeren
 ```bash
 npm install
 ```
 
-3. Maak een `.env` bestand aan in de root van het project met de volgende variabelen:
-```
-DATABASE_URL="mongodb+srv://[username]:[password]@[cluster-url]/[database-name]"
-JWT_SECRET="your-super-secret-jwt-key"
-```
-
-4. Genereer de Prisma client:
+### 3. Start de API
 ```bash
-npx prisma generate
+# Maak het start script uitvoerbaar
+chmod +x start.sh
+
+# Start de API (dit doet alles automatisch)
+./start.sh
 ```
 
-5. Voer de database migraties uit:
-```bash
-npx prisma migrate dev
-```
+De start.sh script zal:
+1. Eventuele processen op poort 3000 stoppen
+2. Het .env bestand aanmaken
+3. De database setup en seeden
+4. De server starten
 
-6. Seed de database met testdata:
-```bash
-npx prisma db seed
-```
-
-## Starten van de applicatie
-
-Development mode:
-```bash
-npm run dev
-```
-
-Production mode:
-```bash
-npm start
-```
+## Test Accounts
+Na het starten zijn deze accounts beschikbaar:
+- **Test User**: test@example.com / password123
+- **Property Owner**: owner@example.com / password123
 
 ## API Endpoints
 
-### Authenticatie
-- POST `/api/auth/register` - Registreer een nieuwe gebruiker
-- POST `/api/auth/login` - Login met bestaande gebruiker
-- GET `/api/auth/me` - Haal huidige gebruiker op
+### Authentication
+```
+POST /api/auth/register - Gebruiker registreren
+POST /api/auth/login - Gebruiker inloggen
+GET /api/auth/me - Huidige gebruiker ophalen
+```
 
 ### Properties
-- GET `/api/properties` - Haal alle properties op
-- GET `/api/properties/:id` - Haal specifieke property op
-- POST `/api/properties` - Maak nieuwe property aan
-- PUT `/api/properties/:id` - Update property
-- DELETE `/api/properties/:id` - Verwijder property
+```
+GET /api/properties - Alle properties ophalen
+GET /api/properties/:id - Property details ophalen
+POST /api/properties - Property aanmaken (OWNER only)
+```
 
 ### Bookings
-- GET `/api/bookings` - Haal alle boekingen op
-- POST `/api/bookings` - Maak nieuwe boeking aan
-- PUT `/api/bookings/:id/status` - Update boeking status
+```
+GET /api/bookings - Bookings ophalen
+POST /api/bookings - Booking aanmaken
+PATCH /api/bookings/:id - Booking status updaten
+```
 
 ### Reviews
-- GET `/api/properties/:id/reviews` - Haal reviews van property op
-- POST `/api/reviews` - Maak nieuwe review aan
-- PUT `/api/reviews/:id` - Update review
+```
+POST /api/reviews - Review aanmaken
+GET /api/properties/:propertyId/reviews - Reviews ophalen
+```
 
-## Testen
-
-Run de tests:
+## Testing
+Run de tests met:
 ```bash
 npm test
 ```
 
-## Database beheren
+## Technische Stack
+- **Backend**: Node.js & Express
+- **Database**: MongoDB
+- **ORM**: Prisma
+- **Authentication**: JWT
+- **Testing**: Jest & Supertest
+- **Development**: Nodemon
 
-Open Prisma Studio om de database te bekijken en te beheren:
-```bash
-npx prisma studio
-```
-
-## Test Gebruikers
-
-Na het seeden van de database zijn de volgende test gebruikers beschikbaar:
-
-1. Test User
-   - Email: test@example.com
-   - Password: password123
-
-2. Property Owner
-   - Email: owner@example.com
-   - Password: password123 
+## Contact
+Voor vragen of ondersteuning, neem contact op via GitHub: [Cedricokito](https://github.com/Cedricokito) 

@@ -12,70 +12,105 @@ async function main() {
 
   // Create test users
   const hashedPassword = await bcrypt.hash('password123', 10);
-  
-  const user1 = await prisma.user.create({
+
+  const testUser = await prisma.user.create({
     data: {
       name: 'Test User',
       email: 'test@example.com',
-      password: hashedPassword
+      password: hashedPassword,
+      role: 'USER'
     }
   });
 
-  const user2 = await prisma.user.create({
+  const ownerUser = await prisma.user.create({
     data: {
       name: 'Property Owner',
       email: 'owner@example.com',
-      password: hashedPassword
+      password: hashedPassword,
+      role: 'OWNER'
     }
   });
 
   // Create test properties
-  const property1 = await prisma.property.create({
-    data: {
-      title: 'Luxury Villa',
-      description: 'Beautiful villa with sea view',
-      price: 200,
-      location: 'Amsterdam',
-      userId: user2.id
-    }
-  });
-
-  const property2 = await prisma.property.create({
-    data: {
-      title: 'City Apartment',
-      description: 'Modern apartment in city center',
-      price: 150,
-      location: 'Rotterdam',
-      userId: user2.id
-    }
-  });
+  const properties = await Promise.all([
+    prisma.property.create({
+      data: {
+        title: 'Beach House',
+        description: 'Beautiful beach house with ocean view',
+        price: 200,
+        location: 'Amsterdam Beach',
+        amenities: ['wifi', 'parking', 'pool'],
+        userId: ownerUser.id
+      }
+    }),
+    prisma.property.create({
+      data: {
+        title: 'Mountain Cabin',
+        description: 'Cozy cabin in the mountains',
+        price: 150,
+        location: 'Mountain Valley',
+        amenities: ['wifi', 'fireplace'],
+        userId: ownerUser.id
+      }
+    }),
+    prisma.property.create({
+      data: {
+        title: 'City Apartment',
+        description: 'Modern apartment in the city center',
+        price: 100,
+        location: 'City Center',
+        amenities: ['wifi', 'gym'],
+        userId: ownerUser.id
+      }
+    })
+  ]);
 
   // Create test bookings
-  const booking1 = await prisma.booking.create({
-    data: {
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: 'CONFIRMED',
-      userId: user1.id,
-      propertyId: property1.id
-    }
-  });
+  const bookings = await Promise.all([
+    prisma.booking.create({
+      data: {
+        startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+        status: 'CONFIRMED',
+        userId: testUser.id,
+        propertyId: properties[0].id
+      }
+    }),
+    prisma.booking.create({
+      data: {
+        startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        endDate: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000), // 37 days from now
+        status: 'PENDING',
+        userId: testUser.id,
+        propertyId: properties[1].id
+      }
+    })
+  ]);
 
   // Create test reviews
-  const review1 = await prisma.review.create({
-    data: {
-      rating: 5,
-      comment: 'Great property!',
-      userId: user1.id,
-      propertyId: property1.id
-    }
-  });
+  await Promise.all([
+    prisma.review.create({
+      data: {
+        rating: 5,
+        comment: 'Amazing property!',
+        userId: testUser.id,
+        propertyId: properties[0].id
+      }
+    }),
+    prisma.review.create({
+      data: {
+        rating: 4,
+        comment: 'Great location and amenities',
+        userId: testUser.id,
+        propertyId: properties[1].id
+      }
+    })
+  ]);
 
   console.log('Database has been seeded!');
-  console.log('Created users:', { user1, user2 });
-  console.log('Created properties:', { property1, property2 });
-  console.log('Created booking:', booking1);
-  console.log('Created review:', review1);
+  console.log('Test users created:');
+  console.log('- Test User (test@example.com / password123)');
+  console.log('- Property Owner (owner@example.com / password123)');
 }
 
 main()

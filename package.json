@@ -14,7 +14,9 @@
     "lint:fix": "eslint src tests --fix",
     "format": "prettier --write 'src/**/*.js' 'tests/**/*.js'",
     "prepare": "husky install",
-    "seed": "node src/seed.js"
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "node prisma/seed.js",
+    "db:setup": "npm run prisma:generate && npm run prisma:seed"
   },
   "keywords": [
     "booking",
