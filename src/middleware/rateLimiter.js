@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const MongoStore = require('rate-limit-mongo');
 const { AppError } = require('./errorHandler');
 
 /**
@@ -59,7 +60,12 @@ const createRateLimiter = (config) => {
     },
     skip: (req) => process.env.NODE_ENV === 'test', // Skip in test environment
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false // Disable the `X-RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    store: new MongoStore({
+      uri: process.env.DATABASE_URL,
+      collectionName: 'rateLimits',
+      expireAfterMs: config.windowMs
+    })
   });
 };
 
