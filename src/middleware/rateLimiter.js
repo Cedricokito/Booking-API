@@ -1,21 +1,5 @@
 const rateLimit = require('express-rate-limit');
-const MongoStore = require('rate-limit-mongo');
 const { AppError } = require('./errorHandler');
-
-// MongoDB store configuratie
-const createMongoStore = () => {
-  if (!process.env.DATABASE_URL) {
-    console.warn('DATABASE_URL niet gevonden, rate limiter gebruikt geheugen opslag');
-    return undefined;
-  }
-
-  return new MongoStore({
-    uri: process.env.DATABASE_URL,
-    collectionName: 'rateLimits',
-    // Verwijder oude rate limit records na 24 uur
-    expireAfterMs: 24 * 60 * 60 * 1000
-  });
-};
 
 /**
  * Rate limit configurations for different routes
@@ -63,8 +47,6 @@ const RATE_LIMITS = {
  * @returns {Function} Rate limiter middleware
  */
 const createRateLimiter = (config) => {
-  const store = createMongoStore();
-  
   return rateLimit({
     windowMs: config.windowMs,
     max: config.max,
@@ -77,8 +59,7 @@ const createRateLimiter = (config) => {
     },
     skip: (req) => process.env.NODE_ENV === 'test', // Skip in test environment
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    store: store // Gebruik MongoDB store als beschikbaar
+    legacyHeaders: false // Disable the `X-RateLimit-*` headers
   });
 };
 
