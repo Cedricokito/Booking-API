@@ -31,7 +31,7 @@ async function main() {
     }
   });
 
-  // Create test properties
+  // Create test properties (amenities als JSON string)
   const properties = await Promise.all([
     prisma.property.create({
       data: {
@@ -39,7 +39,7 @@ async function main() {
         description: 'Beautiful beach house with ocean view',
         price: 200,
         location: 'Amsterdam Beach',
-        amenities: ['wifi', 'parking', 'pool'],
+        amenities: JSON.stringify(['wifi', 'parking', 'pool']),
         userId: ownerUser.id
       }
     }),
@@ -49,7 +49,7 @@ async function main() {
         description: 'Cozy cabin in the mountains',
         price: 150,
         location: 'Mountain Valley',
-        amenities: ['wifi', 'fireplace'],
+        amenities: JSON.stringify(['wifi', 'fireplace']),
         userId: ownerUser.id
       }
     }),
@@ -59,14 +59,14 @@ async function main() {
         description: 'Modern apartment in the city center',
         price: 100,
         location: 'City Center',
-        amenities: ['wifi', 'gym'],
+        amenities: JSON.stringify(['wifi', 'gym']),
         userId: ownerUser.id
       }
     })
   ]);
 
   // Create test bookings
-  const bookings = await Promise.all([
+  await Promise.all([
     prisma.booking.create({
       data: {
         startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
