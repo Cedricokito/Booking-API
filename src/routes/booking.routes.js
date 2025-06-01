@@ -2,32 +2,49 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { protect } = require('../middleware/auth');
-
 const prisma = new PrismaClient();
 
 // Protected routes
 router.use(protect);
 
-// Create booking
+// Create new booking
 router.post('/', async (req, res) => {
   try {
     const { propertyId, startDate, endDate } = req.body;
 
-    // Validate input
     if (!propertyId || !startDate || !endDate) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide propertyId, startDate and endDate'
+      });
     }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
 
     // Validate dates
-    if (start >= end) {
-      return res.status(400).json({ message: 'End date must be after start date' });
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const now = new Date();
+
+    if (end <= start) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'End date must be after start date'
+      });
     }
 
-    if (start < new Date()) {
-      return res.status(400).json({ message: 'Cannot book dates in the past' });
+    if (start < now) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Start date must be in the future'
+      });
+    }
+
+    // Extra: validate propertyId format (UUID v4)
+    const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidV4Regex.test(propertyId)) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found'
+      });
     }
 
     // Check if property exists
@@ -36,7 +53,10 @@ router.post('/', async (req, res) => {
     });
 
     if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found'
+      });
     }
 
     // Check for overlapping bookings
@@ -55,27 +75,26 @@ router.post('/', async (req, res) => {
               { startDate: { lt: end } },
               { endDate: { gte: end } }
             ]
-          },
-          {
-            AND: [
-              { startDate: { gte: start } },
-              { endDate: { lte: end } }
-            ]
           }
         ]
       }
     });
 
     if (overlappingBooking) {
-      return res.status(400).json({ message: 'Property is already booked for these dates' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Property is already booked for these dates'
+      });
     }
 
+    // Create booking
     const booking = await prisma.booking.create({
       data: {
         startDate: start,
         endDate: end,
         userId: req.user.id,
-        propertyId
+        propertyId,
+        status: 'PENDING'
       },
       include: {
         property: {
@@ -89,17 +108,34 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json(booking);
+    res.status(201).json({
+      status: 'success',
+      data: booking
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Create booking error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
-// Get user's bookings
+// Get user bookings
 router.get('/', async (req, res) => {
   try {
+    const { status } = req.query;
+    
+    const where = {
+      userId: req.user.id
+    };
+
+    if (status) {
+      where.status = status.toUpperCase();
+    }
+
     const bookings = await prisma.booking.findMany({
-      where: { userId: req.user.id },
+      where,
       include: {
         property: {
           select: {
@@ -111,12 +147,20 @@ router.get('/', async (req, res) => {
         }
       },
       orderBy: {
-        startDate: 'desc'
+        createdAt: 'desc'
       }
     });
-    res.json(bookings);
+
+    res.json({
+      status: 'success',
+      data: bookings
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get bookings error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
@@ -145,67 +189,92 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Booking not found'
+      });
     }
 
     // Check if user owns the booking
     if (booking.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to view this booking' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to view this booking'
+      });
     }
 
-    res.json(booking);
+    res.json({
+      status: 'success',
+      data: booking
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get booking error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
 // Update booking status
 router.put('/:id/status', async (req, res) => {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const bookingId = req.params.id;
 
-    // Validate status
-    const validStatuses = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+    if (!status) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide status'
+      });
     }
 
     // Check if booking exists
     const booking = await prisma.booking.findUnique({
-      where: { id: bookingId }
+      where: { id }
     });
 
     if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Booking not found'
+      });
     }
 
-    // Check if user owns the booking or is the property owner
-    const property = await prisma.property.findUnique({
-      where: { id: booking.propertyId }
-    });
-
-    if (booking.userId !== req.user.id && property.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to update this booking' });
+    // Check if user owns the booking
+    if (booking.userId !== req.user.id) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to update this booking'
+      });
     }
 
+    // Update booking
     const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status },
+      where: { id },
+      data: { status: status.toUpperCase() },
       include: {
         property: {
           select: {
             id: true,
             title: true,
-            location: true
+            location: true,
+            price: true
           }
         }
       }
     });
 
-    res.json(updatedBooking);
+    res.json({
+      status: 'success',
+      data: updatedBooking
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Update booking error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
@@ -220,17 +289,26 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Booking not found'
+      });
     }
 
     // Check if user owns the booking
     if (booking.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to cancel this booking' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to cancel this booking'
+      });
     }
 
     // Check if booking can be cancelled
     if (booking.status === 'COMPLETED') {
-      return res.status(400).json({ message: 'Cannot cancel a completed booking' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot cancel a completed booking'
+      });
     }
 
     await prisma.booking.update({
@@ -240,7 +318,11 @@ router.delete('/:id', async (req, res) => {
 
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Cancel booking error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 

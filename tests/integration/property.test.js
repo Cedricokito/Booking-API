@@ -37,9 +37,9 @@ describe('Property Tests', () => {
         .send(testProperty);
 
       expect(res.status).toBe(201);
-      expect(res.body).toHaveProperty('title', testProperty.title);
-      expect(res.body).toHaveProperty('price', testProperty.price);
-      expect(res.body).toHaveProperty('userId');
+      expect(res.body.data).toHaveProperty('title', testProperty.title);
+      expect(res.body.data).toHaveProperty('price', testProperty.price);
+      expect(res.body.data).toHaveProperty('userId');
     });
 
     it('should not create property without authentication', async () => {
@@ -64,8 +64,8 @@ describe('Property Tests', () => {
         .get('/api/properties');
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.properties)).toBeTruthy();
-      expect(res.body.properties.length).toBe(1);
+      expect(Array.isArray(res.body.data.properties)).toBeTruthy();
+      expect(res.body.data.properties.length).toBe(1);
     });
 
     it('should filter properties by price range', async () => {
@@ -74,7 +74,7 @@ describe('Property Tests', () => {
         .query({ minPrice: 50, maxPrice: 150 });
 
       expect(res.status).toBe(200);
-      expect(res.body.properties.length).toBe(1);
+      expect(res.body.data.properties.length).toBe(1);
     });
   });
 
@@ -95,12 +95,12 @@ describe('Property Tests', () => {
         .get(`/api/properties/${propertyId}`);
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('title', testProperty.title);
+      expect(res.body.data).toHaveProperty('title', testProperty.title);
     });
 
     it('should return 404 for non-existent property', async () => {
       const res = await request(app)
-        .get('/api/properties/123456789012345678901234');
+        .get('/api/properties/123e4567-e89b-12d3-a456-426614174000');
 
       expect(res.status).toBe(404);
     });

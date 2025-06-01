@@ -1,6 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 
+// Set test database URL
+process.env.DATABASE_URL = 'file:./test.db';
+process.env.JWT_SECRET = 'test-secret-key';
+
 const prisma = new PrismaClient();
 
 // Helper function to create a test user and get auth token
@@ -9,7 +13,6 @@ async function createTestUserAndToken(userData = {}) {
     name: 'Test User',
     email: 'test@example.com',
     password: 'Password123!',
-    role: 'USER',
     ...userData
   };
 

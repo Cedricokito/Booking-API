@@ -2,69 +2,57 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { protect } = require('../middleware/auth');
-
 const prisma = new PrismaClient();
 
 // Public routes
 router.get('/', async (req, res) => {
   try {
     const {
+      page = 1,
+      limit = 10,
       search,
       minPrice,
       maxPrice,
-      location,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-      page = 1,
-      limit = 10
+      location
     } = req.query;
 
-    // Build filter
-    const filter = {};
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where = {};
     if (search) {
-      filter.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+      where.OR = [
+        { title: { contains: search } },
+        { description: { contains: search } }
       ];
     }
-    if (minPrice) filter.price = { ...filter.price, gte: parseFloat(minPrice) };
-    if (maxPrice) filter.price = { ...filter.price, lte: parseFloat(maxPrice) };
-    if (location) filter.location = { contains: location, mode: 'insensitive' };
+    if (minPrice) where.price = { gte: parseFloat(minPrice) };
+    if (maxPrice) where.price = { ...where.price, lte: parseFloat(maxPrice) };
+    if (location) where.location = { contains: location };
 
-    // Validate sort parameters
-    const validSortFields = ['createdAt', 'price', 'title'];
-    const validSortOrders = ['asc', 'desc'];
-    
-    const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-    const order = validSortOrders.includes(sortOrder) ? sortOrder : 'desc';
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Get total count for pagination
-    const total = await prisma.property.count({ where: filter });
-
-    const properties = await prisma.property.findMany({
-      where: filter,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        reviews: {
-          select: {
-            rating: true
+    // Get properties with pagination
+    const [properties, total] = await Promise.all([
+      prisma.property.findMany({
+        where,
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          reviews: {
+            select: {
+              rating: true
+            }
           }
         }
-      },
-      orderBy: {
-        [sortField]: order
-      },
-      skip,
-      take: parseInt(limit)
-    });
+      }),
+      prisma.property.count({ where })
+    ]);
 
     // Calculate average rating for each property
     const propertiesWithRating = properties.map(property => {
@@ -80,28 +68,38 @@ router.get('/', async (req, res) => {
     });
 
     res.json({
-      properties: propertiesWithRating,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit))
+      status: 'success',
+      data: {
+        properties: propertiesWithRating,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / limit)
+        }
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get properties error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
 router.get('/:id', async (req, res) => {
   try {
+    const { id } = req.params;
+
     const property = await prisma.property.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       include: {
         user: {
           select: {
             id: true,
-            name: true
+            name: true,
+            email: true
           }
         },
         reviews: {
@@ -118,28 +116,52 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found'
+      });
     }
 
     // Calculate average rating
-    const avgRating = property.reviews.length > 0
+    const averageRating = property.reviews.length > 0
       ? property.reviews.reduce((acc, review) => acc + review.rating, 0) / property.reviews.length
       : 0;
 
     res.json({
-      ...property,
-      averageRating: avgRating,
-      reviewCount: property.reviews.length
+      status: 'success',
+      data: {
+        ...property,
+        averageRating,
+        reviewCount: property.reviews.length
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get property error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
 router.get('/:id/reviews', async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // Check if property exists
+    const property = await prisma.property.findUnique({
+      where: { id }
+    });
+
+    if (!property) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found'
+      });
+    }
+
     const reviews = await prisma.review.findMany({
-      where: { propertyId: req.params.id },
+      where: { propertyId: id },
       include: {
         user: {
           select: {
@@ -147,11 +169,22 @@ router.get('/:id/reviews', async (req, res) => {
             name: true
           }
         }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
-    res.json(reviews);
+
+    res.json({
+      status: 'success',
+      data: reviews
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get reviews error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
@@ -160,14 +193,20 @@ router.use(protect);
 
 router.post('/', async (req, res) => {
   try {
-    const { title, description, price, location } = req.body;
+    const { title, description, price, location, amenities } = req.body;
     
     if (!title || !description || !price || !location) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'All fields are required'
+      });
     }
 
     if (price <= 0) {
-      return res.status(400).json({ message: 'Price must be greater than 0' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Price must be greater than 0'
+      });
     }
 
     const property = await prisma.property.create({
@@ -176,12 +215,30 @@ router.post('/', async (req, res) => {
         description,
         price: parseFloat(price),
         location,
+        amenities: JSON.stringify(amenities || []),
         userId: req.user.id
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
       }
     });
-    res.status(201).json(property);
+
+    res.status(201).json({
+      status: 'success',
+      data: property
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Create property error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
@@ -192,17 +249,26 @@ router.put('/:id', async (req, res) => {
     });
 
     if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found'
+      });
     }
 
     if (property.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to update this property' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to update this property'
+      });
     }
 
-    const { title, description, price, location } = req.body;
+    const { title, description, price, location, amenities } = req.body;
     
     if (price && price <= 0) {
-      return res.status(400).json({ message: 'Price must be greater than 0' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Price must be greater than 0'
+      });
     }
 
     const updatedProperty = await prisma.property.update({
@@ -211,12 +277,30 @@ router.put('/:id', async (req, res) => {
         title: title || property.title,
         description: description || property.description,
         price: price ? parseFloat(price) : property.price,
-        location: location || property.location
+        location: location || property.location,
+        amenities: amenities ? JSON.stringify(amenities) : property.amenities
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
       }
     });
-    res.json(updatedProperty);
+
+    res.json({
+      status: 'success',
+      data: updatedProperty
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Update property error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
   }
 });
 
@@ -227,11 +311,17 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found'
+      });
     }
 
     if (property.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to delete this property' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to delete this property'
+      });
     }
 
     // Check if property has any active bookings
@@ -244,32 +334,23 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (activeBookings) {
-      return res.status(400).json({ 
-        message: 'Cannot delete property with active bookings' 
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot delete property with active bookings'
       });
     }
 
     await prisma.property.delete({
       where: { id: req.params.id }
     });
+
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-router.post('/:id/reviews', async (req, res) => {
-  try {
-    const review = await prisma.review.create({
-      data: {
-        ...req.body,
-        userId: req.user.id,
-        propertyId: req.params.id
-      }
+    console.error('Delete property error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
     });
-    res.status(201).json(review);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
   }
 });
 

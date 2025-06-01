@@ -33,7 +33,7 @@ describe('Booking Tests', () => {
       .set('Authorization', `Bearer ${authToken}`)
       .send(testProperty);
 
-    propertyId = propertyRes.body.id;
+    propertyId = propertyRes.body.data.id;
     testBooking.propertyId = propertyId;
   });
 
@@ -53,10 +53,10 @@ describe('Booking Tests', () => {
         .send(testBooking);
 
       expect(res.status).toBe(201);
-      expect(res.body).toHaveProperty('property');
-      expect(res.body).toHaveProperty('startDate');
-      expect(res.body).toHaveProperty('endDate');
-      expect(res.body).toHaveProperty('status', 'PENDING');
+      expect(res.body.data).toHaveProperty('property');
+      expect(res.body.data).toHaveProperty('startDate');
+      expect(res.body.data).toHaveProperty('endDate');
+      expect(res.body.data).toHaveProperty('status', 'PENDING');
     });
 
     it('should not create booking without authentication', async () => {
@@ -96,8 +96,8 @@ describe('Booking Tests', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBeTruthy();
-      expect(res.body.length).toBe(1);
+      expect(Array.isArray(res.body.data)).toBeTruthy();
+      expect(res.body.data.length).toBe(1);
     });
 
     it('should filter bookings by status', async () => {
@@ -107,9 +107,9 @@ describe('Booking Tests', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBeTruthy();
-      expect(res.body.length).toBe(1);
-      expect(res.body[0].status).toBe('PENDING');
+      expect(Array.isArray(res.body.data)).toBeTruthy();
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.data[0].status).toBe('PENDING');
     });
   });
 
@@ -122,7 +122,7 @@ describe('Booking Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(testBooking);
 
-      bookingId = bookingRes.body.id;
+      bookingId = bookingRes.body.data.id;
     });
 
     it('should update booking status', async () => {
@@ -132,7 +132,7 @@ describe('Booking Tests', () => {
         .send({ status: 'CANCELLED' });
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('status', 'CANCELLED');
+      expect(res.body.data).toHaveProperty('status', 'CANCELLED');
     });
   });
 }); 
