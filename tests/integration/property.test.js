@@ -87,7 +87,7 @@ describe('Property Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(testProperty);
 
-      propertyId = res.body.id;
+      propertyId = res.body.data.id;
     });
 
     it('should get property by id', async () => {

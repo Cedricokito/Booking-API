@@ -127,7 +127,7 @@ router.get('/:id', async (req, res) => {
       ? property.reviews.reduce((acc, review) => acc + review.rating, 0) / property.reviews.length
       : 0;
 
-    res.json({
+    res.status(200).json({
       status: 'success',
       data: {
         ...property,

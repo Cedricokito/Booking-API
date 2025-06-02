@@ -71,12 +71,23 @@ describe('Review Routes', () => {
 
   describe('POST /api/reviews', () => {
     it('should create a new review', async () => {
+      // Maak een nieuwe booking aan voor deze test
+      const newBooking = await prisma.booking.create({
+        data: {
+          startDate: new Date('2024-05-01'),
+          endDate: new Date('2024-05-05'),
+          status: 'COMPLETED',
+          userId: testUser.id,
+          propertyId: testProperty.id
+        }
+      });
+
       const res = await request(app)
         .post('/api/reviews')
         .set('Authorization', `Bearer ${token}`)
         .send({
           propertyId: testProperty.id,
-          bookingId: testBooking.id,
+          bookingId: newBooking.id,
           rating: 5,
           comment: 'Excellent experience!'
         });

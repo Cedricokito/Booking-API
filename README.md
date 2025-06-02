@@ -1,29 +1,38 @@
 # Booking API
 
-A RESTful API for property booking built with Node.js, Express, and Prisma.
+A RESTful API for property booking built with Node.js, Express, and Prisma ORM.
 
 ## Features
 
-- User authentication with JWT
+- User authentication and authorization
 - Property management (CRUD operations)
 - Booking system
 - Review system
-- Rate limiting
-- Error handling
 - Input validation
+- Error handling
+- Rate limiting
 - Security best practices
+
+## Tech Stack
+
+- Node.js
+- Express.js
+- Prisma ORM
+- SQLite Database
+- JWT for authentication
+- Jest for testing
 
 ## Prerequisites
 
-- Node.js >= 18.0.0
-- PostgreSQL >= 14.0.0
+- Node.js (v18 or higher)
 - npm or yarn
+- SQLite (included with Node.js)
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/booking-api.git
+git clone <repository-url>
 cd booking-api
 ```
 
@@ -32,29 +41,74 @@ cd booking-api
 npm install
 ```
 
-3. Create a `.env` file based on `.env.example`:
-```bash
-cp .env.example .env
-```
-
-4. Update the `.env` file with your configuration.
-
-5. Set up the database:
+3. Set up the database:
 ```bash
 npx prisma migrate dev
 ```
 
-6. Seed the database (optional):
+4. Start the server:
 ```bash
-npx prisma db seed
+npm start
 ```
 
-## Development
+## Environment Variables
 
-Start the development server:
-```bash
-npm run dev
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=7d
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
 ```
+
+## Database
+
+This project uses SQLite as its database, which is:
+- Lightweight and serverless
+- Perfect for development and testing
+- Zero configuration required
+- File-based (data is stored in `prisma/dev.db`)
+
+The database schema is defined in `prisma/schema.prisma` and includes:
+- Users
+- Properties
+- Bookings
+- Reviews
+
+## API Endpoints
+
+### Authentication
+- POST /api/auth/register - Register a new user
+- POST /api/auth/login - Login user
+- GET /api/auth/me - Get current user
+
+### Properties
+- GET /api/properties - Get all properties
+- GET /api/properties/:id - Get property by ID
+- POST /api/properties - Create new property
+- PUT /api/properties/:id - Update property
+- DELETE /api/properties/:id - Delete property
+
+### Bookings
+- GET /api/bookings - Get all bookings
+- GET /api/bookings/:id - Get booking by ID
+- POST /api/bookings - Create new booking
+- PUT /api/bookings/:id - Update booking
+- DELETE /api/bookings/:id - Delete booking
+
+### Reviews
+- GET /api/properties/:id/reviews - Get property reviews
+- POST /api/properties/:id/reviews - Create review
+- PUT /api/reviews/:id - Update review
+- DELETE /api/reviews/:id - Delete review
 
 ## Testing
 
@@ -63,163 +117,35 @@ Run tests:
 npm test
 ```
 
-Run tests in watch mode:
-```bash
-npm run test:watch
-```
-
-Generate test coverage:
+Run tests with coverage:
 ```bash
 npm run test:coverage
 ```
 
-## Linting and Formatting
-
-Lint code:
-```bash
-npm run lint
-```
-
-Fix linting issues:
-```bash
-npm run lint:fix
-```
-
-Format code:
-```bash
-npm run format
-```
-
-## API Documentation
-
-### Authentication
-
-#### Register
-- **POST** `/api/auth/register`
-- Body: `{ "name": "string", "email": "string", "password": "string" }`
-
-#### Login
-- **POST** `/api/auth/login`
-- Body: `{ "email": "string", "password": "string" }`
-
-#### Get Current User
-- **GET** `/api/auth/me`
-- Headers: `Authorization: Bearer <token>`
-
-### Properties
-
-#### List Properties
-- **GET** `/api/properties`
-- Query Parameters:
-  - `page` (default: 1)
-  - `limit` (default: 10)
-  - `search`
-  - `minPrice`
-  - `maxPrice`
-  - `location`
-
-#### Get Property
-- **GET** `/api/properties/:id`
-
-#### Create Property
-- **POST** `/api/properties`
-- Headers: `Authorization: Bearer <token>`
-- Body: `{ "title": "string", "description": "string", "price": number, "location": "string", "amenities": string[] }`
-
-#### Update Property
-- **PUT** `/api/properties/:id`
-- Headers: `Authorization: Bearer <token>`
-- Body: `{ "title": "string", "description": "string", "price": number, "location": "string", "amenities": string[] }`
-
-#### Delete Property
-- **DELETE** `/api/properties/:id`
-- Headers: `Authorization: Bearer <token>`
-
-### Bookings
-
-#### Create Booking
-- **POST** `/api/bookings`
-- Headers: `Authorization: Bearer <token>`
-- Body: `{ "propertyId": "string", "startDate": "string", "endDate": "string" }`
-
-#### List User Bookings
-- **GET** `/api/bookings`
-- Headers: `Authorization: Bearer <token>`
-- Query Parameters:
-  - `status`
-
-#### Get Booking
-- **GET** `/api/bookings/:id`
-- Headers: `Authorization: Bearer <token>`
-
-#### Update Booking Status
-- **PUT** `/api/bookings/:id/status`
-- Headers: `Authorization: Bearer <token>`
-- Body: `{ "status": "string" }`
-
-#### Cancel Booking
-- **DELETE** `/api/bookings/:id`
-- Headers: `Authorization: Bearer <token>`
-
-### Reviews
-
-#### Create Review
-- **POST** `/api/reviews`
-- Headers: `Authorization: Bearer <token>`
-- Body: `{ "propertyId": "string", "rating": number, "comment": "string" }`
-
-#### List Property Reviews
-- **GET** `/api/reviews/property/:propertyId`
-- Query Parameters:
-  - `page` (default: 1)
-  - `limit` (default: 10)
-
-#### Update Review
-- **PUT** `/api/reviews/:id`
-- Headers: `Authorization: Bearer <token>`
-- Body: `{ "rating": number, "comment": "string" }`
-
-#### Delete Review
-- **DELETE** `/api/reviews/:id`
-- Headers: `Authorization: Bearer <token>`
-
 ## Error Handling
 
-The API uses a consistent error response format:
-
-```json
-{
-  "status": "error",
-  "message": "Error message"
-}
-```
-
-Common HTTP status codes:
-- 200: Success
-- 201: Created
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 500: Internal Server Error
+The API uses a centralized error handling system that:
+- Provides consistent error responses
+- Includes appropriate HTTP status codes
+- Returns user-friendly error messages
+- Logs errors for debugging
 
 ## Security
 
-- JWT authentication
+- JWT-based authentication
 - Password hashing with bcrypt
-- Rate limiting
+- Rate limiting to prevent abuse
+- Input validation and sanitization
 - CORS enabled
-- Helmet security headers
-- Input validation
-- SQL injection prevention with Prisma
+- Helmet for security headers
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
 ## License
 

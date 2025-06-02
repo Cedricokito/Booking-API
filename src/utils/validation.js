@@ -1,11 +1,11 @@
-import { ValidationError } from './errors.js';
+const { ValidationError } = require('./errors');
 
 /**
  * Validate email format
  * @param {string} email - Email to validate
  * @throws {ValidationError} If email format is invalid
  */
-export const validateEmail = (email) => {
+const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         throw new ValidationError('Invalid email format');
@@ -17,7 +17,7 @@ export const validateEmail = (email) => {
  * @param {string} password - Password to validate
  * @throws {ValidationError} If password doesn't meet requirements
  */
-export const validatePassword = (password) => {
+const validatePassword = (password) => {
     if (password.length < 8) {
         throw new ValidationError('Password must be at least 8 characters long');
     }
@@ -39,7 +39,7 @@ export const validatePassword = (password) => {
  * @param {Date} endDate - End date
  * @throws {ValidationError} If dates are invalid
  */
-export const validateDateRange = (startDate, endDate) => {
+const validateDateRange = (startDate, endDate) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
@@ -62,7 +62,7 @@ export const validateDateRange = (startDate, endDate) => {
  * @param {string[]} fields - Required field names
  * @throws {ValidationError} If any required field is missing
  */
-export const validateRequired = (data, fields) => {
+const validateRequired = (data, fields) => {
     const missing = fields.filter(field => !data[field]);
     if (missing.length > 0) {
         throw new ValidationError(`Missing required fields: ${missing.join(', ')}`);
@@ -77,7 +77,7 @@ export const validateRequired = (data, fields) => {
  * @param {string} fieldName - Name of the field being validated
  * @throws {ValidationError} If value is outside allowed range
  */
-export const validateNumericRange = (value, min, max, fieldName) => {
+const validateNumericRange = (value, min, max, fieldName) => {
     if (typeof value !== 'number' || isNaN(value)) {
         throw new ValidationError(`${fieldName} must be a number`);
     }
@@ -85,4 +85,12 @@ export const validateNumericRange = (value, min, max, fieldName) => {
     if (value < min || value > max) {
         throw new ValidationError(`${fieldName} must be between ${min} and ${max}`);
     }
+};
+
+module.exports = {
+    validateEmail,
+    validatePassword,
+    validateDateRange,
+    validateRequired,
+    validateNumericRange
 }; 
