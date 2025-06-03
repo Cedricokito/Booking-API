@@ -17,12 +17,13 @@ describe('Booking Routes', () => {
     await prisma.property.deleteMany();
     await prisma.user.deleteMany();
 
-    // Create test user
+    // Maak unieke testgebruiker aan
+    const uniqueEmail = `testuser_${Date.now()}_${Math.floor(Math.random()*10000)}@example.com`;
     const registerRes = await request(app)
       .post('/api/auth/register')
       .send({
         name: 'Test User',
-        email: 'test@example.com',
+        email: uniqueEmail,
         password: 'password123'
       });
 

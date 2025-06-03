@@ -15,12 +15,13 @@ describe('User Routes', () => {
     await prisma.property.deleteMany();
     await prisma.user.deleteMany();
 
-    // Create test user
+    // Maak unieke testgebruiker aan
+    const uniqueEmail = `testuser_${Date.now()}_${Math.floor(Math.random()*10000)}@example.com`;
     const registerRes = await request(app)
       .post('/api/auth/register')
       .send({
         name: 'Test User',
-        email: 'test@example.com',
+        email: uniqueEmail,
         password: 'password123'
       });
 
@@ -42,7 +43,7 @@ describe('User Routes', () => {
       expect(res.body.status).toBe('success');
       expect(res.body.data).toHaveProperty('id', testUser.id);
       expect(res.body.data).toHaveProperty('name', 'Test User');
-      expect(res.body.data).toHaveProperty('email', 'test@example.com');
+      expect(res.body.data).toHaveProperty('email', testUser.email);
       expect(res.body.data).not.toHaveProperty('password');
     });
 

@@ -26,17 +26,23 @@ const testProperty = {
 
 // Setup before tests
 beforeAll(async () => {
-  // Login with existing test user
+  // Registreer testgebruiker als deze nog niet bestaat
+  try {
+    await request(app)
+      .post('/api/auth/register')
+      .send(testUser);
+  } catch (e) {
+    // negeer fout als gebruiker al bestaat
+  }
+  // Login met testgebruiker
   const loginRes = await request(app)
     .post('/api/auth/login')
     .send({
       email: testUser.email,
       password: testUser.password
     });
-  
   authToken = loginRes.body.data ? loginRes.body.data.token : loginRes.body.token;
   testUserId = loginRes.body.data ? loginRes.body.data.user.id : (loginRes.body.user ? loginRes.body.user.id : undefined);
-
   // Get first property for testing
   const properties = await prisma.property.findMany({
     take: 1
