@@ -100,10 +100,10 @@ router.post('/', async (req, res) => {
     const { propertyId, bookingId, rating, comment } = req.body;
 
     // Validate required fields
-    if (!propertyId || !bookingId || !rating || !comment) {
+    if (!propertyId || !rating || !comment) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide propertyId, bookingId, rating and comment'
+        message: 'Please provide propertyId, rating and comment'
       });
     }
 
@@ -127,30 +127,48 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check if booking exists
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId }
-    });
-
-    if (!booking) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Booking not found'
+    // If bookingId is provided, validate the booking
+    if (bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId }
       });
+
+      if (!booking) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Booking not found'
+        });
+      }
+
+      // Check if booking belongs to the user
+      if (booking.userId !== req.user.id) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Not authorized to review this booking'
+        });
+      }
+
+      // Check if booking is completed
+      if (booking.status !== 'COMPLETED' && booking.status !== 'completed') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Booking is not completed'
+        });
+      }
+
+      // Check if booking is for the same property
+      if (booking.propertyId !== propertyId) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Booking does not match the property'
+        });
+      }
     }
 
-    // Check if booking is completed
-    if (booking.status !== 'COMPLETED') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Cannot review a booking that is not completed'
-      });
-    }
-
-    // Check if user has already reviewed this booking
+    // Check if user has already reviewed this property
     const existingReview = await prisma.review.findFirst({
       where: {
-        bookingId,
+        propertyId,
         userId: req.user.id
       }
     });
@@ -158,7 +176,7 @@ router.post('/', async (req, res) => {
     if (existingReview) {
       return res.status(400).json({
         status: 'error',
-        message: 'You have already reviewed this booking'
+        message: 'You have already reviewed this property'
       });
     }
 
@@ -168,8 +186,7 @@ router.post('/', async (req, res) => {
         rating: parseInt(rating),
         comment,
         userId: req.user.id,
-        propertyId,
-        bookingId
+        propertyId
       },
       include: {
         user: {

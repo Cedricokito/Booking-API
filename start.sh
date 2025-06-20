@@ -16,8 +16,8 @@ lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || tr
 if [ ! -f .env ]; then
     echo -e "${GREEN}2. Aanmaken van .env bestand...${NC}"
     cat > .env << EOL
-DATABASE_URL="mongodb+srv://booking_admin:Onyandeka13@cluster0.ppp2iuk.mongodb.net/bookingdb?retryWrites=true&w=majority&appName=Cluster0"
-JWT_SECRET="booking-api-super-secret-key"
+DATABASE_URL="file:./prod.db"
+AUTH_SECRET_KEY="booking-api-super-secret-key"
 PORT=3000
 EOL
 fi

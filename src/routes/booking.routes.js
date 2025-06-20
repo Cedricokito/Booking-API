@@ -2,10 +2,50 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { protect } = require('../middleware/auth');
+const { admin } = require('../middleware/admin');
 const prisma = new PrismaClient();
 
 // Protected routes
 router.use(protect);
+
+// Admin route to get all bookings
+router.get('/admin/all', admin, async (req, res) => {
+  try {
+    const bookings = await prisma.booking.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        property: {
+          select: {
+            id: true,
+            title: true,
+            location: true,
+            pricePerNight: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({
+      status: 'success',
+      data: bookings
+    });
+  } catch (error) {
+    console.error('Get all bookings error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
+  }
+});
 
 // Create new booking
 router.post('/', async (req, res) => {
@@ -102,7 +142,7 @@ router.post('/', async (req, res) => {
             id: true,
             title: true,
             location: true,
-            price: true
+            pricePerNight: true
           }
         }
       }
@@ -142,7 +182,7 @@ router.get('/', async (req, res) => {
             id: true,
             title: true,
             location: true,
-            price: true
+            pricePerNight: true
           }
         }
       },
@@ -175,8 +215,8 @@ router.get('/:id', async (req, res) => {
             id: true,
             title: true,
             location: true,
-            price: true,
-            user: {
+            pricePerNight: true,
+            host: {
               select: {
                 id: true,
                 name: true,
@@ -229,11 +269,17 @@ router.put('/:id/status', async (req, res) => {
       });
     }
 
-    // Check if booking exists
-    const booking = await prisma.booking.findUnique({
-      where: { id }
-    });
+    // Validate status
+    const validStatuses = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
+    if (!validStatuses.includes(status.toUpperCase())) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid status. Must be one of: PENDING, CONFIRMED, CANCELLED, COMPLETED'
+      });
+    }
 
+    // Check if booking exists
+    const booking = await prisma.booking.findUnique({ where: { id } });
     if (!booking) {
       return res.status(404).json({
         status: 'error',
@@ -249,7 +295,7 @@ router.put('/:id/status', async (req, res) => {
       });
     }
 
-    // Update booking
+    // Update booking status
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: { status: status.toUpperCase() },
@@ -259,7 +305,7 @@ router.put('/:id/status', async (req, res) => {
             id: true,
             title: true,
             location: true,
-            price: true
+            pricePerNight: true
           }
         }
       }
@@ -270,7 +316,7 @@ router.put('/:id/status', async (req, res) => {
       data: updatedBooking
     });
   } catch (error) {
-    console.error('Update booking error:', error);
+    console.error('Update booking status error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Internal server error'
@@ -316,7 +362,10 @@ router.delete('/:id', async (req, res) => {
       data: { status: 'CANCELLED' }
     });
 
-    res.status(204).send();
+    res.status(200).json({
+      status: 'success',
+      message: 'Booking cancelled successfully'
+    });
   } catch (error) {
     console.error('Cancel booking error:', error);
     res.status(500).json({

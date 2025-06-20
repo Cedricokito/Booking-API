@@ -19,8 +19,8 @@ npm install
 # 3. Maak .env bestand aan
 echo -e "${GREEN}3. Aanmaken van .env bestand...${NC}"
 cat > .env << EOL
-DATABASE_URL="mongodb+srv://booking_admin:Onyandeka13@cluster0.ppp2iuk.mongodb.net/bookingdb?retryWrites=true&w=majority&appName=Cluster0"
-JWT_SECRET="booking-api-super-secret-key"
+DATABASE_URL="file:./dev.db"
+AUTH_SECRET_KEY="booking-api-super-secret-key"
 PORT=3000
 EOL
 

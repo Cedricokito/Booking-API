@@ -1,16 +1,28 @@
 const request = require('supertest');
 const { PrismaClient } = require('@prisma/client');
 const app = require('../app');
+const { execSync } = require('child_process');
 
 const prisma = new PrismaClient();
 
+let token;
+let user;
+
 describe('Auth Routes', () => {
   beforeEach(async () => {
-    // Clean up database
-    await prisma.review.deleteMany();
-    await prisma.booking.deleteMany();
-    await prisma.property.deleteMany();
-    await prisma.user.deleteMany();
+    // Register test user via API
+    const uniqueEmail = `testuser_${Date.now()}@example.com`;
+    const registerRes = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'testuser',
+        name: 'Test User',
+        email: uniqueEmail,
+        password: 'password123'
+      });
+
+    token = registerRes.body.data.token;
+    user = registerRes.body.data.user;
   });
 
   afterAll(async () => {
@@ -19,11 +31,13 @@ describe('Auth Routes', () => {
 
   describe('POST /api/auth/register', () => {
     it('should register a new user', async () => {
+      const unique = Date.now();
       const res = await request(app)
         .post('/api/auth/register')
         .send({
+          username: `testuser_${unique}`,
           name: 'Test User',
-          email: 'test@example.com',
+          email: `test_${unique}@example.com`,
           password: 'password123'
         });
 
@@ -32,7 +46,7 @@ describe('Auth Routes', () => {
       expect(res.body.data).toHaveProperty('token');
       expect(res.body.data.user).toHaveProperty('id');
       expect(res.body.data.user).toHaveProperty('name', 'Test User');
-      expect(res.body.data.user).toHaveProperty('email', 'test@example.com');
+      expect(res.body.data.user).toHaveProperty('email', `test_${unique}@example.com`);
       expect(res.body.data.user).not.toHaveProperty('password');
     });
 
@@ -41,18 +55,19 @@ describe('Auth Routes', () => {
         .post('/api/auth/register')
         .send({
           name: 'Test User'
-          // Missing email and password
+          // Missing username, email and password
         });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.status).toBe('error');
-      expect(res.body.message).toBe('Please provide name, email and password');
+      expect(res.body.message).toBe('Please provide username, name, email and password');
     });
 
     it('should not register a user with invalid email', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
+          username: 'testuser',
           name: 'Test User',
           email: 'invalid-email',
           password: 'password123'
@@ -67,6 +82,7 @@ describe('Auth Routes', () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
+          username: 'testuser',
           name: 'Test User',
           email: 'test@example.com',
           password: '123' // Too short
@@ -82,6 +98,7 @@ describe('Auth Routes', () => {
       await request(app)
         .post('/api/auth/register')
         .send({
+          username: 'testuser1',
           name: 'Test User',
           email: 'test@example.com',
           password: 'password123'
@@ -91,6 +108,7 @@ describe('Auth Routes', () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
+          username: 'testuser2',
           name: 'Another User',
           email: 'test@example.com',
           password: 'password123'
@@ -103,13 +121,17 @@ describe('Auth Routes', () => {
   });
 
   describe('POST /api/auth/login', () => {
+    let unique, email, username;
     beforeEach(async () => {
-      // Create test user
+      unique = Date.now();
+      email = `test_${unique}@example.com`;
+      username = `testuser_${unique}`;
       await request(app)
         .post('/api/auth/register')
         .send({
+          username,
           name: 'Test User',
-          email: 'test@example.com',
+          email,
           password: 'password123'
         });
     });
@@ -118,7 +140,7 @@ describe('Auth Routes', () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
+          email,
           password: 'password123'
         });
 
@@ -127,7 +149,7 @@ describe('Auth Routes', () => {
       expect(res.body.data).toHaveProperty('token');
       expect(res.body.data.user).toHaveProperty('id');
       expect(res.body.data.user).toHaveProperty('name', 'Test User');
-      expect(res.body.data.user).toHaveProperty('email', 'test@example.com');
+      expect(res.body.data.user).toHaveProperty('email', email);
       expect(res.body.data.user).not.toHaveProperty('password');
     });
 
@@ -141,7 +163,7 @@ describe('Auth Routes', () => {
 
       expect(res.statusCode).toBe(400);
       expect(res.body.status).toBe('error');
-      expect(res.body.message).toBe('Please provide email and password');
+      expect(res.body.message).toBe('Please provide email or username and password');
     });
 
     it('should not login a user with invalid email', async () => {
@@ -185,15 +207,18 @@ describe('Auth Routes', () => {
   });
 
   describe('GET /api/auth/me', () => {
-    let token;
+    let token, unique, email, username;
 
     beforeEach(async () => {
-      // Create test user and get token
+      unique = Date.now();
+      email = `test_${unique}@example.com`;
+      username = `testuser_${unique}`;
       const registerRes = await request(app)
         .post('/api/auth/register')
         .send({
+          username,
           name: 'Test User',
-          email: 'test@example.com',
+          email,
           password: 'password123'
         });
 
@@ -209,7 +234,7 @@ describe('Auth Routes', () => {
       expect(res.body.status).toBe('success');
       expect(res.body.data).toHaveProperty('id');
       expect(res.body.data).toHaveProperty('name', 'Test User');
-      expect(res.body.data).toHaveProperty('email', 'test@example.com');
+      expect(res.body.data).toHaveProperty('email', email);
       expect(res.body.data).not.toHaveProperty('password');
     });
 

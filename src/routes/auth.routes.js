@@ -13,13 +13,13 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Register user
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, name, email, password } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password) {
+    if (!username || !name || !email || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide name, email and password'
+        message: 'Please provide username, name, email and password'
       });
     }
 
@@ -27,6 +27,7 @@ router.post('/register', async (req, res) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({
         status: 'error',
+        data: null,
         message: 'Please provide a valid email'
       });
     }
@@ -35,19 +36,28 @@ router.post('/register', async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({
         status: 'error',
+        data: null,
         message: 'Password must be at least 6 characters long'
       });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
+    // Check if user already exists by email
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         status: 'error',
+        data: null,
         message: 'Email already exists'
+      });
+    }
+
+    // Check if username already exists
+    const existingUsername = await prisma.user.findUnique({ where: { username } });
+    if (existingUsername) {
+      return res.status(400).json({
+        status: 'error',
+        data: null,
+        message: 'Username already exists'
       });
     }
 
@@ -57,36 +67,26 @@ router.post('/register', async (req, res) => {
 
     // Create user
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true
-      }
+      data: { username, name, email, password: hashedPassword },
+      select: { id: true, username: true, name: true, email: true }
     });
 
     // Generate token
     const token = jwt.sign(
       { id: user.id },
-      process.env.JWT_SECRET,
+      process.env.AUTH_SECRET_KEY,
       { expiresIn: '1d' }
     );
 
     res.status(201).json({
       status: 'success',
-      data: {
-        user,
-        token
-      }
+      data: { user, token }
     });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({
       status: 'error',
+      data: null,
       message: 'Internal server error'
     });
   }
@@ -95,28 +95,34 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, password } = req.body;
 
     // Validate required fields
-    if (!email || !password) {
+    if ((!email && !username) || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide email and password'
+        message: 'Please provide email or username and password'
       });
     }
 
-    // Validate email format
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Please provide a valid email'
+    // Find user by email or username
+    let user;
+    if (email) {
+      // Validate email format
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Please provide a valid email'
+        });
+      }
+      user = await prisma.user.findUnique({
+        where: { email }
+      });
+    } else {
+      user = await prisma.user.findUnique({
+        where: { username }
       });
     }
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
 
     if (!user) {
       return res.status(401).json({
@@ -138,7 +144,7 @@ router.post('/login', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { id: user.id },
-      process.env.JWT_SECRET,
+      process.env.AUTH_SECRET_KEY,
       { expiresIn: '1d' }
     );
 
@@ -147,6 +153,7 @@ router.post('/login', async (req, res) => {
       data: {
         user: {
           id: user.id,
+          username: user.username,
           name: user.name,
           email: user.email
         },

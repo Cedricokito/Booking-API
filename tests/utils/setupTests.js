@@ -76,7 +76,7 @@ async function createTestUser(userData = {}) {
 async function generateTestToken(user) {
   const token = jwt.sign(
     { userId: user._id },
-    process.env.JWT_SECRET || 'test-secret',
+    process.env.AUTH_SECRET_KEY || 'test-secret',
     { expiresIn: '1h' }
   );
   return `Bearer ${token}`;

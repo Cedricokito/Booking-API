@@ -10,13 +10,13 @@ const prisma = new PrismaClient();
 // Register a new user
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, name, email, password } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password) {
+    if (!username || !name || !email || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide name, email and password'
+        message: 'Please provide username, name, email and password'
       });
     }
 
@@ -48,6 +48,18 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Check if username already exists
+    const existingUsername = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (existingUsername) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Username already exists'
+      });
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -55,6 +67,7 @@ router.post('/register', async (req, res) => {
     // Create user
     const user = await prisma.user.create({
       data: {
+        username,
         name,
         email,
         password: hashedPassword
@@ -64,7 +77,7 @@ router.post('/register', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { id: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.AUTH_SECRET_KEY || 'your-secret-key',
       { expiresIn: '1d' }
     );
 
@@ -90,28 +103,34 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, password } = req.body;
 
     // Validate required fields
-    if (!email || !password) {
+    if ((!email && !username) || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide email and password'
+        message: 'Please provide email or username and password'
       });
     }
 
-    // Validate email
-    if (!validateEmail(email)) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Please provide a valid email'
+    // Find user by email or username
+    let user;
+    if (email) {
+      // Validate email
+      if (!validateEmail(email)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Please provide a valid email'
+        });
+      }
+      user = await prisma.user.findUnique({
+        where: { email }
+      });
+    } else {
+      user = await prisma.user.findUnique({
+        where: { username }
       });
     }
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
 
     if (!user) {
       return res.status(401).json({
@@ -133,7 +152,7 @@ router.post('/login', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { id: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.AUTH_SECRET_KEY || 'your-secret-key',
       { expiresIn: '1d' }
     );
 
@@ -170,7 +189,7 @@ router.get('/me', async (req, res) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, process.env.AUTH_SECRET_KEY || 'your-secret-key');
 
     // Find user
     const user = await prisma.user.findUnique({

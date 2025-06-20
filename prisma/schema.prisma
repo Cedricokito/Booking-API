@@ -7,67 +7,76 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
+  username  String   @unique
   name      String
-  email     String    @unique
+  email     String   @unique
   password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  properties Property[]
+  // Role can be either 'USER' or 'ADMIN'
+  role      String   @default("USER")
   bookings  Booking[]
   reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Host {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  name      String
+  email     String     @unique
+  password  String?
+  listings  Property[] // 1-to-many: Host -> Property
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Property {
-  id          String    @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  location    String
-  amenities   String    // JSON string of amenities
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings    Booking[]
-  reviews     Review[]
+  id            String      @id @default(uuid())
+  title         String
+  description   String
+  location      String
+  pricePerNight Decimal
+  hostId        String
+  host          Host        @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  amenities     Amenity[]   @relation("PropertyAmenities")
+  bookings      Booking[]
+  reviews       Review[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Amenity {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  properties Property[]  @relation("PropertyAmenities")
 }
 
 model Booking {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   startDate  DateTime
   endDate    DateTime
-  status     String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  status     String
   userId     String
   propertyId String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  reviews    Review[]
-
-  @@index([userId])
-  @@index([propertyId])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Review {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   rating     Int
   comment    String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
   userId     String
   propertyId String
-  bookingId  String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([propertyId])
-  @@index([bookingId])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }

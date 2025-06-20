@@ -4,7 +4,7 @@ const { ValidationError, AuthenticationError } = require('../utils/errors');
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'test-secret', { expiresIn: '24h' });
+  return jwt.sign({ userId }, process.env.AUTH_SECRET_KEY || 'test-secret', { expiresIn: '24h' });
 };
 
 // Register new user

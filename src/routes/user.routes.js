@@ -232,4 +232,16 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    const { username, password, name, email, phonenumber, pictureURL } = req.body;
+    if (!username || !password || !name || !email) {
+      return res.status(400).json({ status: 'error', message: 'Missing required fields' });
+    }
+    // ...rest of the user creation logic
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router; 

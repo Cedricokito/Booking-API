@@ -16,7 +16,7 @@ const protect = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.AUTH_SECRET_KEY);
 
     // Check if user still exists
     const user = await prisma.user.findUnique({
@@ -25,8 +25,10 @@ const protect = async (req, res, next) => {
       },
       select: {
         id: true,
+        username: true,
         name: true,
-        email: true
+        email: true,
+        role: true
       }
     });
 
